@@ -101,17 +101,30 @@ In the _send_sms_ directory:
 - ⚠️ **Ask first:** Before modifying existing files in a major way
 - 🚫 **Never do:** Modify code in `send_sms/` or `receive_sms`, edit config files, commit secrets
 
-## Pull request expectations
+## Code Style Guidelines
+
+The code style for this project follows the [Rust Style Guide][rust-style-guide].
+
+## Commit Messages and Pull Requests
+
+- Follow [the Chris Beams style of commit messages][chris-beams-commit-message].
+  Commit messages should be concise and written in the imperative mood.
+  Small, focused commits are preferred.
+
+### Pull request expectations
 
 PRs should use the template located at `.github/PULL_REQUEST_TEMPLATE/pull_request_template.md`.
 Provide a summary, test plan and issue number if applicable, then check that:
 
+- Every pull request answers:
+  - What changed?
+  - Why?
+  - What are the breaking changes?
+  - What is the server PR (if the change requires a coordinated server update)?
 - New tests are added when needed.
 - Documentation is updated.
 - The full test suite passes.
-
-Commit messages should be concise and written in the imperative mood.
-Small, focused commits are preferred.
+- Comments should be complete sentences and end with a period.
 
 ## What reviewers look for
 
@@ -122,7 +135,9 @@ Small, focused commits are preferred.
 
 [active_numbers]: https://console.twilio.com/us1/develop/phone-numbers/manage/incoming
 [cargo-clippy]: https://doc.rust-lang.org/stable/clippy/usage.html
+[chris-beams-commit-message]: http://chris.beams.io/posts/git-commit/
 [e164_format]: https://www.twilio.com/docs/glossary/what-e164
 [ngrok]: https://ngrok.com/
+[rust-style-guide]: https://doc.rust-lang.org/style-guide/
 [twilio_console]: https://console.twilio.com
 [twilio_signup]: https://www.twilio.com/try-twilio
