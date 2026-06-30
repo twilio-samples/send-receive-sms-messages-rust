@@ -1,144 +1,69 @@
-# AGENTS.md
+# Send & receive SMS messages with Rust
 
-Welcome to the Send and receive SMS messages repository.
-This file contains the main points for new contributors.
+Demonstrates how to send and receive SMS messages using Twilio's Messaging API with two independent Rust applications.
 
-## Repository overview
+## Environment Variables
 
-- **Source code**: `send_sms` and `receive_sms` contain the implementation.
-- **Documentation**: README.md contains the project's documentation.
-- **PR template**: `.github/PULL_REQUEST_TEMPLATE/pull_request_template.md` describes the information every PR must include.
-
-## Project knowledge
-
-### Repository structure
-
-When suggesting file paths or navigation, follow this structure:
+Copy `.env.example` to `.env` in the `send_sms/` directory. Never commit `.env`.
 
 ```bash
-send-receive-sms-messages-php/
-.
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md             # A GitHub template for reporting bugs
-│   │   ├── feature_request.md        # A GitHub template for requesting new features
-│   │   └── question.md               # A GitHub template for asking questions about the project
-│   ├── PULL_REQUEST_TEMPLATE/
-│   │   └── pull_request_template.md  # A GitHub template for creating pull requests
-    └── copilot-instructions.md       # This file
-├── AGENTS.md                         # Project guidance for most Agents, except for Claude and Copilot
-├── CLAUDE.md                         # Project guidance for Claude Code
-├── CONTRIBUTING.md                   # Instructions for contributing to the project
-├── LICENSE.md                        # The project's license (MIT)
-├── README.md                         # Main landing page with table of contents
-├── send_sms                          # A small Rust application that shows how to send an SMS
-└── receive_sms                       # A small Rust application that shows how to reply to an SMS
+cp send_sms/.env.example send_sms/.env
 ```
 
-### Tech stack
+| Variable | Where to find | Format |
+| -------- | ------------- | ------ |
+| `TWILIO_ACCOUNT_SID` | Console homepage or Admin dropdown (top right) → Account Management → Keys & Credentials → API Keys & Tokens | Starts with `AC` |
+| `TWILIO_AUTH_TOKEN` | Console homepage or Admin dropdown (top right) → Account Management → Keys & Credentials → API Keys & Tokens → click to reveal | 32-char string. Treat as a password. |
+| `TWILIO_PHONE_NUMBER` | Console → Phone Numbers → Manage → Active Numbers | E.164 format: `+15551234567` |
+| `RECIPIENT_PHONE_NUMBER` | The phone number you want to send the test SMS to | E.164 format: `+15551234567` |
 
-- Cargo
-- Rust
+## Commands
 
-## Prerequisites
+```bash
+# Install dependencies (send SMS)
+cd send_sms && cargo build
 
-To run the app, the following is required:
+# Install dependencies (receive SMS)
+cd receive_sms && cargo build
 
-- Rust and Cargo
-- [ngrok][ngrok] and a free ngrok account
-- A [Twilio account][twilio_signup] with an active phone number that can send SMS
+# Run send_sms (sends one SMS then exits)
+cd send_sms && cargo run
 
-## Set up instructions
+# Run receive_sms (starts webhook server on port 4000)
+cd receive_sms && cargo run
 
-### Send an SMS
+# Expose receive_sms webhooks locally
+# Requires ngrok — install and authenticate at https://ngrok.com before running
+ngrok http 4000
+# Set the resulting URL + /receive/with-response as the SMS webhook in Twilio Console
+```
 
-In the _send_sms_ directory:
+## Project Structure
 
-1. Rename the `.env.example` file to `.env`
-1. Go to the [Twilio Console][twilio_console] and find your **Account SID**, **Auth Token**, and Twilio phone number.
-1. Copy and paste those values into the placeholders in the `.env` file `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `SENDER`, respectively.
-1. Set your phone number, in [E.164 format][e164_format] as the value of `RECIPIENT` in _.env_
-   Save the file.
+- `send_sms/src/main.rs` — CLI app that POSTs to Twilio Messages API using basic auth
+- `receive_sms/src/main.rs` — Axum server exposing `/receive/no-response` and `/receive/with-response`
+- `send_sms/.env.example` — template for required credentials
 
-### Receive an SMS
+## Agent Boundaries
 
-1. Start your ngrok server:
+**Always:**
+- Confirm `send_sms/.env` is configured before running any command
+- Use the Environment Variables section to guide the user to each credential — don't ask them to find values without direction
+- Confirm the app is running before asking the user to test it
 
-   ```bash
-   ngrok http 8080
-   ```
+**Never:**
+- Run the app with missing or placeholder credentials
+- Hardcode credentials or phone numbers in source files
+- Skip the `cp send_sms/.env.example send_sms/.env` step
 
-1. Go to the [Active numbers][active_numbers] page in the Twilio Console.
-1. Click your Twilio phone number.
-1. Go to the **Configure** tab and find the **Messaging Configuration** section.
-1. In the **A call comes in** row, select the **Webhook** option.
-1. Paste your ngrok **Forwarding** URL in the **URL** field followed by "/receive/".
-   For example, if your ngrok console shows Forwarding "<https://1aaa-123-45-678-910.ngrok-free.app>", enter "<https://1aaa-123-45-678-910.ngrok-free.app/receive/>".
-   - To receive an SMS **without** responding to it, append "no-response" to the URL
-   - To receive an SMS and respond to it, append "with-response" to the URL
-1. Click **Save configuration**.
-1. Start the Rust web app
+## Verify It's Working
 
-   ```bash
-   cargo run
-   ```
+**Send SMS:** After running `cd send_sms && cargo run`, the terminal should print `Your SMS with the body ...`. Check that the SMS arrives on the phone number set in `RECIPIENT_PHONE_NUMBER`.
 
-## Commands you can use
+**Receive SMS:** After starting `cd receive_sms && cargo run` and exposing port 4000 with ngrok, set the ngrok HTTPS URL + `/receive/with-response` as the SMS webhook in Twilio Console. Text your Twilio number (`TWILIO_PHONE_NUMBER`) the word `never gonna` — you should receive a reply with a line from "Never Gonna Give You Up".
 
-**Lint the documentation:** `markdownlint-cli2 README.md`
-**Check the code:**
+## Twilio Resources
 
-- Check the _send_sms_ app: `cd send_sms && cargo clippy`
-- Check the _receive_sms_ app: `cd receive_sms && cargo clippy`
-
-**Run the code:**
-
-- Run the _send_sms_ app: `cd send_sms && cargo run`
-- Run the _receive_sms_ app: `cd receive_sms && cargo run`
-
-## Boundaries
-
-- ✅ **Always do:** Follow the style examples, run `cargo clippy` for Rust source files
-- ⚠️ **Ask first:** Before modifying existing files in a major way
-- 🚫 **Never do:** Modify code in `send_sms/` or `receive_sms`, edit config files, commit secrets
-
-## Code Style Guidelines
-
-The code style for this project follows the [Rust Style Guide][rust-style-guide].
-
-## Commit Messages and Pull Requests
-
-- Follow [the Chris Beams style of commit messages][chris-beams-commit-message].
-  Commit messages should be concise and written in the imperative mood.
-  Small, focused commits are preferred.
-
-### Pull request expectations
-
-PRs should use the template located at `.github/PULL_REQUEST_TEMPLATE/pull_request_template.md`.
-Provide a summary, test plan and issue number if applicable, then check that:
-
-- Every pull request answers:
-  - What changed?
-  - Why?
-  - What are the breaking changes?
-  - What is the server PR (if the change requires a coordinated server update)?
-- New tests are added when needed.
-- Documentation is updated.
-- The full test suite passes.
-- Comments should be complete sentences and end with a period.
-
-## What reviewers look for
-
-- Tests covering new behaviour.
-- Consistent style: code formatted with [Clippy][cargo-clippy] and use statements sorted.
-- Clear documentation for any public API changes.
-- Clean history and a helpful PR description.
-
-[active_numbers]: https://console.twilio.com/us1/develop/phone-numbers/manage/incoming
-[cargo-clippy]: https://doc.rust-lang.org/stable/clippy/usage.html
-[chris-beams-commit-message]: http://chris.beams.io/posts/git-commit/
-[e164_format]: https://www.twilio.com/docs/glossary/what-e164
-[ngrok]: https://ngrok.com/
-[rust-style-guide]: https://doc.rust-lang.org/style-guide/
-[twilio_console]: https://console.twilio.com
-[twilio_signup]: https://www.twilio.com/try-twilio
+- [Twilio Console](https://console.twilio.com) — credentials, phone numbers, webhook configuration
+- [Twilio Messaging API docs](https://www.twilio.com/docs/messaging/api)
+- [TwiML for Messaging](https://www.twilio.com/docs/messaging/twiml)
